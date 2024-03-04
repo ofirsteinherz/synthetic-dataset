@@ -17,18 +17,29 @@ session = boto3.Session(
     region_name=aws_default_region
 )
 
-# Now you can use this session to access AWS services
-# For example, creating an S3 client
-s3 = session.client('s3')
+sts_client = boto3.client('sts')
+
+# Call the get_caller_identity method
+caller_identity = sts_client.get_caller_identity()
+
+# The ARN of the user or role
+arn = caller_identity['Arn']
+
+print("ARN:", arn)
 
 
-# Try to list S3 buckets
-try:
-    response = s3.list_buckets()
-    # If the call succeeds, we can assume we're connected. Print the bucket names.
-    print("Connected to AWS. S3 Buckets:")
-    for bucket in response['Buckets']:
-        print(f"- {bucket['Name']}")
-except Exception as e:
-    print(f"Failed to connect to AWS: {e}")
+# # Now you can use this session to access AWS services
+# # For example, creating an S3 client
+# s3 = session.client('s3')
+
+
+# # Try to list S3 buckets
+# try:
+#     response = s3.list_buckets()
+#     # If the call succeeds, we can assume we're connected. Print the bucket names.
+#     print("Connected to AWS. S3 Buckets:")
+#     for bucket in response['Buckets']:
+#         print(f"- {bucket['Name']}")
+# except Exception as e:
+#     print(f"Failed to connect to AWS: {e}")
     
