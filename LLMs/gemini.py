@@ -28,6 +28,22 @@ class ContentGenerator:
             'gpt-4': ['choices', 0, 'text']
         }
 
+    # def call_model_api(self, model_id, body):
+    #     # Determine the base URL for the given model_id
+    #     base_url = self.base_url.get(model_id, '')
+    #     if not base_url:
+    #         print(f"Base URL for model {model_id} not found.")
+    #         return {}, 0
+
+    #     url = f'{base_url}{self.api_key}'
+    #     headers = {'Content-Type': 'application/json'}
+
+    #     start_time = time.time()
+    #     response = requests.post(url, headers=headers, data=json.dumps(body))
+    #     duration = time.time() - start_time
+    #     return response.json(), duration
+    
+
     def call_model_api(self, model_id, body):
         # Determine the base URL for the given model_id
         base_url = self.base_url.get(model_id, '')
@@ -35,12 +51,37 @@ class ContentGenerator:
             print(f"Base URL for model {model_id} not found.")
             return {}, 0
 
-        url = f'{base_url}{self.api_key}'
-        headers = {'Content-Type': 'application/json'}
+        # Set headers and modify body based on the model API requirements
+        if model_id == "gpt-4":
+            headers = {
+                'Content-Type': 'application/json',
+                'Authorization': f'Bearer {self.api_key}'
+            }
+            # For GPT-4, the URL is already complete; no need to append the API key
+            url = base_url
+            # Ensure the body is correctly structured for GPT-4
+            body = {
+                "model": "gpt-4-1106-preview",
+                "messages": [
+                    {"role": "system", "content": "You are an assistant, and you only reply with JSON."},
+                    {"role": "user", "content": body["prompt"]}  # Assume body contains 'prompt' key for simplification
+                ],
+                "response_format": {"type": "json_object"}
+            }
+        else:
+            headers = {'Content-Type': 'application/json'}
+            # For other models, append the API key to the URL
+            url = f'{base_url}{self.api_key}'
 
         start_time = time.time()
         response = requests.post(url, headers=headers, data=json.dumps(body))
         duration = time.time() - start_time
+
+        if response.status_code != 200:
+            # Log error details
+            print(f"Error calling {model_id} API. HTTP Status: {response.status_code}, Response Body: {response.text}")
+            return {"error": "API call failed", "details": response.text, "status_code": response.status_code}, duration
+
         return response.json(), duration
 
     def count_tokens(self, text):
