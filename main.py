@@ -2,6 +2,8 @@ import boto3
 from dotenv import load_dotenv
 import os
 
+from LLMs.BedrockRuntimeClient import BedrockRuntimeClient
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -17,29 +19,17 @@ session = boto3.Session(
     region_name=aws_default_region
 )
 
-sts_client = boto3.client('sts')
-
-# Call the get_caller_identity method
-caller_identity = sts_client.get_caller_identity()
-
-# The ARN of the user or role
-arn = caller_identity['Arn']
-
-print("ARN:", arn)
 
 
-# # Now you can use this session to access AWS services
-# # For example, creating an S3 client
-# s3 = session.client('s3')
+brt_client = BedrockRuntimeClient()
 
+# Invoke a model with some custom parameters
+extracted_response, body, full_response, duration = brt_client.invoke_model(
+    model_id='ai21.j2-ultra-v1',
+    prompt="Discuss the ethical considerations of AI.",
+    custom_parameters={'temperature': 0.5, 'topP': 0.9}
+)
 
-# # Try to list S3 buckets
-# try:
-#     response = s3.list_buckets()
-#     # If the call succeeds, we can assume we're connected. Print the bucket names.
-#     print("Connected to AWS. S3 Buckets:")
-#     for bucket in response['Buckets']:
-#         print(f"- {bucket['Name']}")
-# except Exception as e:
-#     print(f"Failed to connect to AWS: {e}")
-    
+# extracted_response, body, full_response, duration
+
+print(extracted_response)
