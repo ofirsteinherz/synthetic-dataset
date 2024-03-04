@@ -18,16 +18,11 @@ class ContentGenerator:
         # Correctly format the URL to include the model_id and API key
         url = f'{self.base_url}{model_id}:generateContent?key={self.api_key}'
         headers = {'Content-Type': 'application/json'}
-        # Print statements for debugging
-        print(f"Making POST request to: {url}")
-        print(f"Headers: {headers}")
-        print(f"Body: {json.dumps(body, indent=2)}")
-        
+
         start_time = time.time()
         response = requests.post(url, headers=headers, data=json.dumps(body))
         duration = time.time() - start_time
         return response.json(), duration
-
 
     def count_tokens(self, text):
         url = f'{self.base_url}countTokens?key={self.api_key}'
