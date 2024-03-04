@@ -5,18 +5,30 @@ import time
 class ContentGenerator:
     def __init__(self, api_key):
         self.api_key = api_key
-        self.base_url = 'https://generativelanguage.googleapis.com/v1beta/models/'
-        self.default_parameters = {
-            "safetySettings": [{"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_ONLY_HIGH"}],
-            "generationConfig": {"stopSequences": ["Title"], "temperature": 1.0, "maxOutputTokens": 800, "topP": 0.8, "topK": 10}
+        # Mapping model IDs to their base URLs
+        self.base_url = {
+            "gemini-pro": 'https://generativelanguage.googleapis.com/v1beta/models/'
         }
+        # Default parameters for each model
+        self.default_parameters = { 
+            "gemini-pro": {
+                "safetySettings": [{"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_ONLY_HIGH"}],
+                "generationConfig": {"stopSequences": ["Title"], "temperature": 1.0, "maxOutputTokens": 800, "topP": 0.8, "topK": 10}
+            }
+        }
+        # Response paths for extracting text for each model
         self.response_paths = {
-            'text': ['candidates', 0, 'content', 'parts', 0, 'text']  # Assuming a generic path for simplicity
+            'gemini-pro': ['candidates', 0, 'content', 'parts', 0, 'text']
         }
 
     def call_model_api(self, model_id, body):
-        # Correctly format the URL to include the model_id and API key
-        url = f'{self.base_url}{model_id}:generateContent?key={self.api_key}'
+        # Determine the base URL for the given model_id
+        base_url = self.base_url.get(model_id, '')
+        if not base_url:
+            print(f"Base URL for model {model_id} not found.")
+            return {}, 0
+
+        url = f'{base_url}{model_id}:generateContent?key={self.api_key}'
         headers = {'Content-Type': 'application/json'}
 
         start_time = time.time()
@@ -25,7 +37,6 @@ class ContentGenerator:
         return response.json(), duration
 
     def count_tokens(self, text):
-        # url = f'{self.base_url}:countTokens?key={self.api_key}'
         url = f'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:countTokens?key={api_key}'
         headers = {'Content-Type': 'application/json'}
         data = {"contents": [{"parts": [{"text": text}]}]}
@@ -36,9 +47,16 @@ class ContentGenerator:
             print(f"Error in count_tokens: {response.status_code}, {response.text}")
             return None
 
-    def extract_response_text(self, response):
-        path = self.response_paths['text']
-        text = response
+    def extract_response_text(self, model_id, response):
+        # Check if the model ID is supported and has a defined response path
+        if model_id not in self.response_paths:
+            print(f"Model ID {model_id} not supported.")
+            return "Model ID not supported.", 0  # Adjusted to return 0 as token count in case of error
+    
+        path = self.response_paths[model_id]
+        text = response  # Assuming 'response' is already a Python dictionary (decoded JSON)
+        
+        # Navigate through the response using the path to extract the text
         for key in path:
             if isinstance(text, dict) and key in text:
                 text = text[key]
@@ -46,27 +64,23 @@ class ContentGenerator:
                 text = text[key]
             else:
                 return "Path extraction error.", 0  # Adjusted to return 0 as token count in case of error
-
+    
+        # Calculate the token count for the extracted text
         token_count = self.count_tokens(text)
         return text, token_count
 
+
     def invoke_model(self, model_id, prompt, custom_parameters=None):
-        # Prepare request parameters
-        parameters = self.default_parameters.copy()
+        parameters = self.default_parameters.get(model_id, {}).copy()
         if custom_parameters:
             parameters['generationConfig'].update(custom_parameters)
         parameters['contents'] = [{"parts": [{"text": prompt}]}]
 
-        # Make API call
         full_response, duration = self.call_model_api(model_id, parameters)
-        
-        # Extract and process the response
-        extracted_response, output_token_count = self.extract_response_text(full_response)
-        
-        # Calculate token counts for both prompt and extracted response
+        extracted_response, output_token_count = self.extract_response_text(model_id, full_response)
+
         input_token_count = self.count_tokens(prompt)
 
-        # Append token counts to the full response
         if 'tokenCount' not in full_response:
             full_response['tokenCount'] = {}
         full_response['tokenCount']['input'] = input_token_count
