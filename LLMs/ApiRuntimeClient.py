@@ -1,6 +1,7 @@
 import requests
 import json
 import time
+import os
 
 class ContentGenerator:
     def __init__(self, api_key):
