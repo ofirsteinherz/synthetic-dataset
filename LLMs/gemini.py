@@ -28,33 +28,30 @@ class ContentGenerator:
             'gpt-4': ['choices', 0, 'message', 'content']
         }
 
-    def call_model_api(self, model_id, prompt):
+    def call_model_api(self, model_id, prompt, custom_parameters=None):
         base_url = self.base_url.get(model_id, '')
         if not base_url:
             print(f"Base URL for model {model_id} not found.")
             return {}, 0
 
-        # Common headers
         headers = {'Content-Type': 'application/json'}
-        # Initialize an empty body
-        body = {}
-
         if model_id == "gpt-4":
             headers['Authorization'] = f'Bearer {self.api_key}'
-            url = base_url  # GPT-4's URL doesn't need the API key appended
+            url = base_url
             body = {
                 "model": "gpt-4-1106-preview",
-                "messages": [
-                    {"role": "system", "content": "You are an assistant"},
-                    {"role": "user", "content": prompt}
-                ],
-                # "response_format": {"type": "json_object"}
+                "messages": [{"role": "system", "content": "You are an assistant"}, {"role": "user", "content": prompt}]
             }
-        else:  # Assuming 'else' branch is for Gemini model
-            # For Gemini and potentially other models, append the API key to the URL if necessary
-            url = f'{base_url}{self.api_key}' if model_id != "gpt-4" else base_url
-            # Structure the body as required for the Gemini model
-            body['contents'] = [{"parts": [{"text": prompt}]}]
+            if custom_parameters:
+                body.update(custom_parameters)
+        else:  # Handling for Gemini
+            url = f'{base_url}{self.api_key}'
+            body = {
+                "contents": [{"parts": [{"text": prompt}]}]
+            }
+            if custom_parameters:
+                # Directly apply the known correct structure for Gemini custom parameters
+                body.update(custom_parameters)
 
         start_time = time.time()
         response = requests.post(url, headers=headers, data=json.dumps(body))
@@ -78,16 +75,14 @@ class ContentGenerator:
             print(f"Error in count_tokens: {response.status_code}, {response.text}")
             return None
 
-    def extract_response_text(self, model_id, response, prompt, custom_parameters=None):
+    def extract_response_text(self, model_id, response):
         # Check if the model ID is supported and has a defined response path
         if model_id not in self.response_paths:
             print(f"Model ID {model_id} not supported.")
             return "Model ID not supported.", 0  # Adjusted to return 0 as token count in case of error
     
         path = self.response_paths[model_id]
-        # text = json.dumps(response)  # Assuming 'response' is already a Python dictionary (decoded JSON)
-        text = response
-        print(json.dumps(response, indent=4))
+        text = response  # Assuming 'response' is already a Python dictionary (decoded JSON)
 
         # Navigate through the response using the path to extract the text
         for key in path:
@@ -103,11 +98,11 @@ class ContentGenerator:
         return text, token_count
 
     def invoke_model(self, model_id, prompt, custom_parameters=None):
-        # Pass only the prompt to call_model_api, simplifying its input
-        body, full_response, duration = self.call_model_api(model_id, prompt)
+        # Pass custom_parameters to call_model_api
+        body, full_response, duration = self.call_model_api(model_id, prompt, custom_parameters)
 
         # Extract the response and count tokens based on the full response
-        extracted_response, output_token_count = self.extract_response_text(model_id, full_response, prompt, custom_parameters)
+        extracted_response, output_token_count = self.extract_response_text(model_id, full_response)
 
         # Count input tokens
         input_token_count = self.count_tokens(prompt)
@@ -120,25 +115,43 @@ class ContentGenerator:
 
         return body, extracted_response, full_response, duration
 
+# # Example usage
+# from dotenv import load_dotenv
+# import os
 
-# Example usage
-from dotenv import load_dotenv
-import os
-load_dotenv()
-# api_key = os.getenv("GEMINI_API_KEY")
-# model_id = "gemini-pro"  # Replace with actual model ID
-# prompt = "Write a story about a magical forest in a sentance"
+# # Initialize environment and load API key
+# load_dotenv()
+# prompt = "Write a story about a magical forest in a sentence."
 
+# # ========== Gemini ==========
+# api_key = os.getenv("GEMINI_API_KEY")  # Use OPENAI_API_KEY for GPT-4
 # generator = ContentGenerator(api_key)
-# request_body, extracted_response, full_response, duration = generator.invoke_model(model_id, prompt)
-# print("Extracted Response:", extracted_response)
-# print("Duration:", duration, "seconds")
+# custom_params_gemini = {
+#     "generationConfig": {
+#         "temperature": 0.8,
+#         "maxOutputTokens": 500
+#     }
+# }
+# body, extracted_response_gemini, full_response_gemini, duration_gemini = generator.invoke_model(
+#     model_id="gemini-pro",
+#     prompt=prompt,
+#     custom_parameters=custom_params_gemini
+# )
+# print("Gemini Model Response:", extracted_response_gemini)
+# print("Duration:", duration_gemini, "seconds")
 
-api_key = os.getenv("OPENAI_API_KEY")
-model_id = "gpt-4"  # Replace with actual model ID
-prompt = "Write a story about a magical forest in a sentance"
-
-generator = ContentGenerator(api_key)
-request_body, extracted_response, full_response, duration = generator.invoke_model(model_id, prompt)
-print("Extracted Response:", extracted_response)
-print("Duration:", duration, "seconds")
+# # ========== GPT-4 ==========
+# api_key = os.getenv("OPENAI_API_KEY")  # Use OPENAI_API_KEY for GPT-4
+# generator = ContentGenerator(api_key)
+# custom_params_gpt4 = {
+#     "temperature": 0.6,
+#     "max_tokens": 256,
+#     "top_p": 1
+# }
+# body, extracted_response_gpt, full_response_gpt, duration_gpt = generator.invoke_model(
+#     model_id="gpt-4",
+#     prompt=prompt,
+#     custom_parameters=custom_params_gpt4
+# )
+# print("GPT-4 Model Response:", extracted_response_gpt)
+# print("Duration:", duration_gpt, "seconds")
