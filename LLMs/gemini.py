@@ -25,7 +25,8 @@ class ContentGenerator:
         return response.json(), duration
 
     def count_tokens(self, text):
-        url = f'{self.base_url}countTokens?key={self.api_key}'
+        # url = f'{self.base_url}:countTokens?key={self.api_key}'
+        url = f'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:countTokens?key={api_key}'
         headers = {'Content-Type': 'application/json'}
         data = {"contents": [{"parts": [{"text": text}]}]}
         response = requests.post(url, headers=headers, data=json.dumps(data))
@@ -44,21 +45,33 @@ class ContentGenerator:
             elif isinstance(text, list) and isinstance(key, int) and len(text) > key:
                 text = text[key]
             else:
-                return "Path extraction error."
+                return "Path extraction error.", 0  # Adjusted to return 0 as token count in case of error
+
         token_count = self.count_tokens(text)
         return text, token_count
 
     def invoke_model(self, model_id, prompt, custom_parameters=None):
+        # Prepare request parameters
         parameters = self.default_parameters.copy()
         if custom_parameters:
             parameters['generationConfig'].update(custom_parameters)
         parameters['contents'] = [{"parts": [{"text": prompt}]}]
-        
+
+        # Make API call
         full_response, duration = self.call_model_api(model_id, parameters)
-        extracted_response, token_count = self.extract_response_text(full_response)
         
-        # Enhance response with token counts
-        full_response['tokenCount'] = token_count
+        # Extract and process the response
+        extracted_response, output_token_count = self.extract_response_text(full_response)
+        
+        # Calculate token counts for both prompt and extracted response
+        input_token_count = self.count_tokens(prompt)
+
+        # Append token counts to the full response
+        if 'tokenCount' not in full_response:
+            full_response['tokenCount'] = {}
+        full_response['tokenCount']['input'] = input_token_count
+        full_response['tokenCount']['output'] = output_token_count
+
         return extracted_response, parameters, full_response, duration
 
 # Example usage
@@ -67,7 +80,7 @@ import os
 load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
 model_id = "gemini-pro"  # Replace with actual model ID
-prompt = "Write a story about a magical forest."
+prompt = "Write a story about a magical forest in a sentance"
 
 generator = ContentGenerator(api_key)
 extracted_response, request_body, full_response, duration = generator.invoke_model(model_id, prompt)
