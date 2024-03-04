@@ -7,18 +7,25 @@ class ContentGenerator:
         self.api_key = api_key
         # Mapping model IDs to their base URLs
         self.base_url = {
-            "gemini-pro": 'https://generativelanguage.googleapis.com/v1beta/models/'
+            "gemini-pro": 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=',
+            "gpt-4": 'https://api.openai.com/v1/models/'
         }
-        # Default parameters for each model
         self.default_parameters = { 
             "gemini-pro": {
                 "safetySettings": [{"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_ONLY_HIGH"}],
                 "generationConfig": {"stopSequences": ["Title"], "temperature": 1.0, "maxOutputTokens": 800, "topP": 0.8, "topK": 10}
+            },
+            "gpt-4": {
+                "temperature": 0.7,
+                "max_tokens": 512,
+                "top_p": 0.95,
+                "frequency_penalty": 0.0,
+                "presence_penalty": 0.0,
             }
         }
-        # Response paths for extracting text for each model
         self.response_paths = {
-            'gemini-pro': ['candidates', 0, 'content', 'parts', 0, 'text']
+            'gemini-pro': ['candidates', 0, 'content', 'parts', 0, 'text'],
+            'gpt-4': ['choices', 0, 'text']
         }
 
     def call_model_api(self, model_id, body):
@@ -28,7 +35,7 @@ class ContentGenerator:
             print(f"Base URL for model {model_id} not found.")
             return {}, 0
 
-        url = f'{base_url}{model_id}:generateContent?key={self.api_key}'
+        url = f'{base_url}{self.api_key}'
         headers = {'Content-Type': 'application/json'}
 
         start_time = time.time()
@@ -37,7 +44,8 @@ class ContentGenerator:
         return response.json(), duration
 
     def count_tokens(self, text):
-        url = f'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:countTokens?key={api_key}'
+        gemini_api_key = os.getenv("GEMINI_API_KEY")
+        url = f'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:countTokens?key={gemini_api_key}'
         headers = {'Content-Type': 'application/json'}
         data = {"contents": [{"parts": [{"text": text}]}]}
         response = requests.post(url, headers=headers, data=json.dumps(data))
@@ -69,7 +77,6 @@ class ContentGenerator:
         token_count = self.count_tokens(text)
         return text, token_count
 
-
     def invoke_model(self, model_id, prompt, custom_parameters=None):
         parameters = self.default_parameters.get(model_id, {}).copy()
         if custom_parameters:
@@ -100,3 +107,12 @@ generator = ContentGenerator(api_key)
 extracted_response, request_body, full_response, duration = generator.invoke_model(model_id, prompt)
 print("Extracted Response:", extracted_response)
 print("Duration:", duration, "seconds")
+
+# api_key = os.getenv("OPENAI_API_KEY")
+# model_id = "gemini-pro"  # Replace with actual model ID
+# prompt = "Write a story about a magical forest in a sentance"
+
+# generator = ContentGenerator(api_key)
+# extracted_response, request_body, full_response, duration = generator.invoke_model(model_id, prompt)
+# print("Extracted Response:", extracted_response)
+# print("Duration:", duration, "seconds")
