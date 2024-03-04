@@ -64,7 +64,7 @@ class ContentGenerator:
             print(f"Error calling {model_id} API. HTTP Status: {response.status_code}, Response Body: {response.text}")
             return {"error": "API call failed", "details": response.text, "status_code": response.status_code}, duration
 
-        return response.json(), duration
+        return body, response.json(), duration
 
     def count_tokens(self, text):
         gemini_api_key = os.getenv("GEMINI_API_KEY")
@@ -104,7 +104,7 @@ class ContentGenerator:
 
     def invoke_model(self, model_id, prompt, custom_parameters=None):
         # Pass only the prompt to call_model_api, simplifying its input
-        full_response, duration = self.call_model_api(model_id, prompt)
+        body, full_response, duration = self.call_model_api(model_id, prompt)
 
         # Extract the response and count tokens based on the full response
         extracted_response, output_token_count = self.extract_response_text(model_id, full_response, prompt, custom_parameters)
@@ -118,28 +118,27 @@ class ContentGenerator:
         full_response['tokenCount']['input'] = input_token_count
         full_response['tokenCount']['output'] = output_token_count
 
-        return extracted_response, full_response, duration
+        return body, extracted_response, full_response, duration
 
 
 # Example usage
 from dotenv import load_dotenv
 import os
 load_dotenv()
-api_key = os.getenv("GEMINI_API_KEY")
-model_id = "gemini-pro"  # Replace with actual model ID
-prompt = "Write a story about a magical forest in a sentance"
-
-generator = ContentGenerator(api_key)
-extracted_response, full_response, duration = generator.invoke_model(model_id, prompt)
-# extracted_response, request_body, full_response, duration = generator.invoke_model(model_id, prompt)
-print("Extracted Response:", extracted_response)
-print("Duration:", duration, "seconds")
-
-# api_key = os.getenv("OPENAI_API_KEY")
-# model_id = "gpt-4"  # Replace with actual model ID
+# api_key = os.getenv("GEMINI_API_KEY")
+# model_id = "gemini-pro"  # Replace with actual model ID
 # prompt = "Write a story about a magical forest in a sentance"
 
 # generator = ContentGenerator(api_key)
-# extracted_response, full_response, duration = generator.invoke_model(model_id, prompt)
+# request_body, extracted_response, full_response, duration = generator.invoke_model(model_id, prompt)
 # print("Extracted Response:", extracted_response)
 # print("Duration:", duration, "seconds")
+
+api_key = os.getenv("OPENAI_API_KEY")
+model_id = "gpt-4"  # Replace with actual model ID
+prompt = "Write a story about a magical forest in a sentance"
+
+generator = ContentGenerator(api_key)
+request_body, extracted_response, full_response, duration = generator.invoke_model(model_id, prompt)
+print("Extracted Response:", extracted_response)
+print("Duration:", duration, "seconds")
