@@ -3,12 +3,16 @@ import random
 import json
 
 class ModelPromptProcessor:
-    def __init__(self, categories, brt_client, db_instance):
+    def __init__(self, categories, brt_client, db_instance, content_generators):
         self.categories = categories
         self.brt_client = brt_client
         self.db = db_instance
+        self.content_generators = content_generators  # Dictionary of ContentGenerator instances
+        print("ModelPromptProcessor initialized.")  # Confirm initialization
 
     def generate_prompt_with_sentiment(self):
+        print("Generating prompt with sentiment...")
+
         sentiment = random.choice(["positive", "negative"])
         categories_list = self.categories['data']
         selected_categories = random.sample(categories_list, 3)
@@ -30,37 +34,49 @@ The response must reflect a positive outlook or outcome despite the context of t
 
 Here's a sentence that fits the criteria you've described:
 Assistant:
-"""
+"""        
+        print(f"Generated prompt: {prompt}, Sentiment: {sentiment}, Categories JSON: {json_prompt}")
+
         return prompt, sentiment, json_prompt
 
     def invoke_models_and_save(self, prompt, sentiment, categories_json):
+        print("Invoking models and preparing to save...")
+
         model_names = ["ai21.j2-ultra-v1", "amazon.titan-text-express-v1", "meta.llama2-70b-chat-v1", "anthropic.claude-v2"]
-        tasks = {model: lambda model=model: self.brt_client.invoke_model(model_id=model, prompt=prompt) for model in model_names}
 
-        with ThreadPoolExecutor() as executor:
-            future_to_model = {executor.submit(task): model for model, task in tasks.items()}
+        # Process built-in models one by one
+        for model in model_names:
+            print(f"Invoking model: {model}")
+            try:
+                extracted_text, request_body, full_response, duration = self.brt_client.invoke_model(model_id=model, prompt=prompt)
+                self.process_and_save_results(model, sentiment, categories_json, prompt, extracted_text, request_body, full_response, duration)
+            except Exception as e:
+                print(f"Error invoking built-in model {model}: {e}")
 
-            for future in as_completed(future_to_model):
-                model = future_to_model[future]
-                try:
-                    extracted_text, request_body, full_response, duration = future.result()
-                    
-                    # If full_response is a dictionary containing a StreamingBody, create a copy without the 'body' key
-                    if isinstance(full_response, dict):
-                        response_for_storage = {k: v for k, v in full_response.items() if k != 'body'}
-                    else:
-                        response_for_storage = {"error": "Unexpected response format"}
+        # Invoke ContentGenerator models one by one
+        for model_id, generator in self.content_generators.items():
+            print(f"Invoking ContentGenerator model: {model_id}")
+            try:
+                extracted_text, request_body, full_response, duration = generator.invoke_model(model_id=model_id, prompt=prompt)
+                self.process_and_save_results(model_id, sentiment, categories_json, prompt, extracted_text, request_body, full_response, duration)
+            except Exception as e:
+                print(f"Error invoking ContentGenerator model {model_id}: {e}")
 
-                    self.db.write_item(
-                        model=model, 
-                        sentiment=sentiment, 
-                        categories=categories_json, 
-                        prompt=prompt, 
-                        run_time=duration, 
-                        response=extracted_text, 
-                        request_body=request_body,
-                        full_response=response_for_storage
-                    )
+    def process_and_save_results(self, model, sentiment, categories_json, prompt, extracted_text, request_body, full_response, duration):
+        if isinstance(full_response, dict):
+            response_for_storage = {k: v for k, v in full_response.items() if k != 'body'}
+        else:
+            response_for_storage = {"error": "Unexpected response format"}
 
-                except Exception as e:
-                    print(f"Error invoking model {model}: {e}")
+        self.db.write_item(
+            model=model, 
+            sentiment=sentiment, 
+            categories=categories_json, 
+            prompt=prompt, 
+            run_time=duration, 
+            response=extracted_text, 
+            request_body=request_body,
+            full_response=response_for_storage
+        )
+
+        print(f"Data saved for model: {model}")
