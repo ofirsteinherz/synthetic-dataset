@@ -1,0 +1,109 @@
+{
+  "data": [
+    {
+      "category": "Contexts or Scenarios",
+      "topics": [
+        "Work environment",
+        "Social events",
+        "Relationship dynamics",
+        "Personal hobbies",
+        "Exercise routines",
+        "Daily commutes",
+        "Educational settings",
+        "Shopping experiences",
+        "Medical appointments",
+        "Family gatherings"
+      ]
+    },
+    {
+      "category": "Intensity Modifiers",
+      "topics": [
+        "Extreme happiness",
+        "Mild annoyance",
+        "Minimal interest",
+        "Severe sadness",
+        "Deep gratitude",
+        "Slight confusion",
+        "Incredible excitement",
+        "Significant fear",
+        "Moderate tiredness",
+        "Intense love"
+      ]
+    },
+    {
+      "category": "Reasons or Causes",
+      "topics": [
+        "Achieving a personal goal",
+        "Experiencing a loss",
+        "Receiving unexpected news",
+        "Facing a difficult challenge",
+        "Making a new friend",
+        "Losing a valuable item",
+        "Starting a new job",
+        "Ending a relationship",
+        "Discovering a new interest",
+        "Overcoming a fear"
+      ]
+    },
+    {
+      "category": "Temporal Aspects",
+      "topics": [
+        "Recent events",
+        "Childhood memories",
+        "Future aspirations",
+        "Long-term goals",
+        "Past regrets",
+        "Immediate reactions",
+        "Seasonal changes",
+        "Historical moments",
+        "Age-related experiences",
+        "Momentary feelings"
+      ]
+    },
+    {
+      "category": "Direct and Indirect Speech",
+      "topics": [
+        "First-person expressions",
+        "Third-person observations",
+        "Indirect reporting",
+        "Quoted speech",
+        "Implied sentiments",
+        "Explicit statements",
+        "Question forms",
+        "Hypothetical scenarios",
+        "Past narrations",
+        "Future predictions"
+      ]
+    },
+    {
+      "category": "Comparisons or Contrasts",
+      "topics": [
+        "Emotional growth",
+        "Changes in circumstances",
+        "Differing perspectives",
+        "Contrasting feelings",
+        "Comparative outcomes",
+        "Before and after scenarios",
+        "Expectations vs. reality",
+        "Personal development",
+        "Cultural differences",
+        "Competitive situations"
+      ]
+    },
+    {
+      "category": "Cultural or Idiomatic Expressions",
+      "topics": [
+        "Local idioms",
+        "Cultural proverbs",
+        "Folk tales",
+        "Popular sayings",
+        "Clichés",
+        "Slang terms",
+        "Traditional expressions",
+        "Literary references",
+        "Colloquial phrases",
+        "Historical quotes"
+      ]
+    }
+  ]
+}
