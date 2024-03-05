@@ -39,30 +39,6 @@ Assistant:
 
         return prompt, sentiment, json_prompt
 
-    def invoke_models_and_save(self, prompt, sentiment, categories_json):
-        print("Invoking models and preparing to save sequentially...")
-
-        # List of built-in model names to process
-        model_names = ["ai21.j2-ultra-v1", "amazon.titan-text-express-v1", "meta.llama2-70b-chat-v1", "anthropic.claude-v2"]
-
-        # Process each built-in model one at a time
-        for model in model_names:
-            print(f"Invoking built-in model: {model}")
-            try:
-                extracted_text, request_body, full_response, duration = self.brt_client.invoke_model(model_id=model, prompt=prompt)
-                self.process_and_save_results(model, sentiment, categories_json, prompt, extracted_text, request_body, full_response, duration)
-            except Exception as e:
-                print(f"Error invoking built-in model {model}: {e}")
-
-        # Process each ContentGenerator model one at a time
-        for model_id, generator in self.content_generators.items():
-            print(f"Invoking ContentGenerator model: {model_id}")
-            try:
-                extracted_text, request_body, full_response, duration = generator.invoke_model(model_id=model_id, prompt=prompt)
-                self.process_and_save_results(model_id, sentiment, categories_json, prompt, extracted_text, request_body, full_response, duration)
-            except Exception as e:
-                print(f"Error invoking ContentGenerator model {model_id}: {e}")
-
     def process_and_save_results(self, model, sentiment, categories_json, prompt, extracted_text, request_body, full_response, duration):
         print(f"Processing results for model: {model}")
         if isinstance(full_response, dict):
@@ -82,3 +58,39 @@ Assistant:
             )
         except Exception as e:
             print(f"Error saving item for {model}: {e}")
+
+    def invoke_model_and_process(self, invoke_func, model_id, prompt, sentiment, categories_json):
+        try:
+            # invoke_func is either self.brt_client.invoke_model or generator.invoke_model
+            extracted_text, request_body, full_response, duration = invoke_func(model_id=model_id, prompt=prompt)
+            self.process_and_save_results(model_id, sentiment, categories_json, prompt, extracted_text, request_body, full_response, duration)
+        except Exception as e:
+            print(f"Error invoking model {model_id}: {e}")
+
+    def invoke_models_and_save(self, prompt, sentiment, categories_json):
+        print("Invoking models and preparing to save concurrently...")
+        
+        # Define a list to collect futures
+        futures = []
+
+        # Initialize ThreadPoolExecutor
+        with ThreadPoolExecutor() as executor:
+            # Schedule built-in model tasks
+            for model in ["ai21.j2-ultra-v1", "amazon.titan-text-express-v1", "meta.llama2-70b-chat-v1", "anthropic.claude-v2"]:
+                # Note: We're passing a lambda or partial to submit to correctly bind the current loop variable's value
+                futures.append(executor.submit(self.invoke_model_and_process, self.brt_client.invoke_model, model, prompt, sentiment, categories_json))
+
+            # Schedule ContentGenerator model tasks
+            for model_id, generator in self.content_generators.items():
+                futures.append(executor.submit(self.invoke_model_and_process, generator.invoke_model, model_id, prompt, sentiment, categories_json))
+
+            # Wait for all futures to complete
+            for future in as_completed(futures):
+                # This block can be used to process results or catch exceptions
+                # For example, future.result() will re-raise any exception caught during execution
+                try:
+                    result = future.result()
+                    # Process result (if needed)
+                except Exception as e:
+                    # Handle exception
+                    print(f"Task raised an exception: {e}")
