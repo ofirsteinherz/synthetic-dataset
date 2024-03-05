@@ -79,4 +79,5 @@ class BedrockRuntimeClient:
             body = json.dumps(parameters)
 
         full_response, duration = self.call_model_api(body, model_id)
+        body = json.loads(body)
         return self.extract_response_text(model_id, full_response), body, full_response, duration

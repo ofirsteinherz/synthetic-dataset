@@ -56,8 +56,9 @@ class ContentGenerator:
 
         start_time = time.time()
         response = requests.post(url, headers=headers, data=json.dumps(body))
-        duration = time.time() - start_time
-
+        end_time = time.time()
+        duration = end_time - start_time
+        
         if response.status_code != 200:
             print(f"Error calling {model_id} API. HTTP Status: {response.status_code}, Response Body: {response.text}")
             return {"error": "API call failed", "details": response.text, "status_code": response.status_code}, duration
@@ -98,9 +99,24 @@ class ContentGenerator:
         token_count = self.count_tokens(text)
         return text, token_count
 
+    def deep_merge_dicts(self, default_dict, custom_dict):
+        """Recursively merges custom_dict into default_dict."""
+        for key, value in custom_dict.items():
+            if key in default_dict and isinstance(default_dict[key], dict) and isinstance(value, dict):
+                self.deep_merge_dicts(default_dict[key], value)
+            else:
+                default_dict[key] = value
+                
     def invoke_model(self, model_id, prompt, custom_parameters=None):
-        # Pass custom_parameters to call_model_api
-        body, full_response, duration = self.call_model_api(model_id, prompt, custom_parameters)
+        # Get a copy of the default parameters for the model_id
+        parameters = self.default_parameters.get(model_id, {}).copy()
+        
+        # Perform a deep merge if custom_parameters is not None
+        if custom_parameters is not None:
+            self.deep_merge_dicts(parameters, custom_parameters)
+
+        # Pass parameters to call_model_api
+        body, full_response, duration = self.call_model_api(model_id, prompt, parameters)
 
         # Extract the response and count tokens based on the full response
         extracted_response, output_token_count = self.extract_response_text(model_id, full_response)
@@ -130,17 +146,16 @@ class ContentGenerator:
 # custom_params_gemini = {
 #     "generationConfig": {
 #         "temperature": 0.8,
-#         "maxOutputTokens": 500
+#         "maxOutputTokens": 1000
 #     }
 # }
-# body, extracted_response_gemini, full_response_gemini, duration_gemini = generator.invoke_model(
+# extracted_response_gemini, body, full_response_gemini, duration_gemini = generator.invoke_model(
 #     model_id="gemini-pro",
 #     prompt=prompt,
 #     custom_parameters=custom_params_gemini
 # )
 # print("Gemini Model Response:", extracted_response_gemini)
 # print("Duration:", duration_gemini, "seconds")
-
 # # ========== GPT-4 ==========
 # api_key = os.getenv("OPENAI_API_KEY")  # Use OPENAI_API_KEY for GPT-4
 # generator = ContentGenerator(api_key)

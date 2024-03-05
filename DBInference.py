@@ -38,6 +38,7 @@ class DBInference:
 
     def write_item(self, model, sentiment, categories, prompt, run_time, response, request_body, full_response):
         timestamp = datetime.now(pytz.timezone('Asia/Jerusalem')).isoformat()
+
         item = {
             'model': model,
             'timestamp': timestamp,
@@ -46,7 +47,7 @@ class DBInference:
             'prompt': prompt,
             'run_time': Decimal(str(run_time)),
             'response': response,
-            'request_body': request_body,
+            'request_body': json.dumps(request_body),
             'full_response': json.dumps(full_response)
         }
         try:

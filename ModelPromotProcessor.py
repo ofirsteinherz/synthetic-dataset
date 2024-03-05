@@ -69,15 +69,16 @@ Assistant:
             response_for_storage = {k: v for k, v in full_response.items() if k != 'body'}
         else:
             response_for_storage = {"error": "Unexpected response format"}
-
-        self.db.write_item(
-            model=model,
-            sentiment=sentiment,
-            categories=categories_json,
-            prompt=prompt,
-            run_time=duration,
-            response=extracted_text,
-            request_body=request_body,
-            full_response=response_for_storage
-        )
-        print(f"Data saved for model: {model}")
+        try:
+            self.db.write_item(
+                model=model,
+                sentiment=sentiment,
+                categories=categories_json,
+                prompt=prompt,
+                run_time=duration,
+                response=extracted_text, 
+                request_body=request_body,
+                full_response=response_for_storage
+            )
+        except Exception as e:
+            print(f"Error saving item for {model}: {e}")
