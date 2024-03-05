@@ -11,7 +11,7 @@ class ModelPromptProcessor:
         print("ModelPromptProcessor initialized.")  # Confirm initialization
 
     def generate_prompt_with_sentiment(self):
-        print("Generating prompt with sentiment...")
+        print("Generating prompt with sentiment")
 
         sentiment = random.choice(["positive", "negative"])
         categories_list = self.categories['data']
@@ -35,25 +35,26 @@ The response must reflect a positive outlook or outcome despite the context of t
 Here's a sentence that fits the criteria you've described:
 Assistant:
 """        
-        print(f"Generated prompt: {prompt}, Sentiment: {sentiment}, Categories JSON: {json_prompt}")
+        print(f"Generated prompt")
 
         return prompt, sentiment, json_prompt
 
     def invoke_models_and_save(self, prompt, sentiment, categories_json):
-        print("Invoking models and preparing to save...")
+        print("Invoking models and preparing to save sequentially...")
 
+        # List of built-in model names to process
         model_names = ["ai21.j2-ultra-v1", "amazon.titan-text-express-v1", "meta.llama2-70b-chat-v1", "anthropic.claude-v2"]
 
-        # Process built-in models one by one
+        # Process each built-in model one at a time
         for model in model_names:
-            print(f"Invoking model: {model}")
+            print(f"Invoking built-in model: {model}")
             try:
                 extracted_text, request_body, full_response, duration = self.brt_client.invoke_model(model_id=model, prompt=prompt)
                 self.process_and_save_results(model, sentiment, categories_json, prompt, extracted_text, request_body, full_response, duration)
             except Exception as e:
                 print(f"Error invoking built-in model {model}: {e}")
 
-        # Invoke ContentGenerator models one by one
+        # Process each ContentGenerator model one at a time
         for model_id, generator in self.content_generators.items():
             print(f"Invoking ContentGenerator model: {model_id}")
             try:
@@ -63,20 +64,20 @@ Assistant:
                 print(f"Error invoking ContentGenerator model {model_id}: {e}")
 
     def process_and_save_results(self, model, sentiment, categories_json, prompt, extracted_text, request_body, full_response, duration):
+        print(f"Processing results for model: {model}")
         if isinstance(full_response, dict):
             response_for_storage = {k: v for k, v in full_response.items() if k != 'body'}
         else:
             response_for_storage = {"error": "Unexpected response format"}
 
         self.db.write_item(
-            model=model, 
-            sentiment=sentiment, 
-            categories=categories_json, 
-            prompt=prompt, 
-            run_time=duration, 
-            response=extracted_text, 
+            model=model,
+            sentiment=sentiment,
+            categories=categories_json,
+            prompt=prompt,
+            run_time=duration,
+            response=extracted_text,
             request_body=request_body,
             full_response=response_for_storage
         )
-
         print(f"Data saved for model: {model}")

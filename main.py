@@ -11,19 +11,19 @@ from DBInference import DBInference
 # Load environment variables from .env file
 load_dotenv()
 
-# prompt = "Write a story about a magical forest in a sentence."
+prompt = "Write a story about a magical forest in a sentence."
 
-# aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
-# aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
-# aws_default_region = os.getenv('AWS_DEFAULT_REGION')
+aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
+aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
+aws_default_region = os.getenv('AWS_DEFAULT_REGION')
 
-# # Initialize a boto3 session
-# session = boto3.Session(
-#     aws_access_key_id=aws_access_key_id,
-#     aws_secret_access_key=aws_secret_access_key,
-#     region_name=aws_default_region
-# )
-# brt_client = BedrockRuntimeClient()
+# Initialize a boto3 session
+session = boto3.Session(
+    aws_access_key_id=aws_access_key_id,
+    aws_secret_access_key=aws_secret_access_key,
+    region_name=aws_default_region
+)
+brt_client = BedrockRuntimeClient()
 
 # # Invoke a model with some custom parameters
 # extracted_response, body, full_response, duration = brt_client.invoke_model(
@@ -34,8 +34,8 @@ load_dotenv()
 # print("AI21 J2 Model Response:", extracted_response)
 # print("Duration:", duration, "seconds\n")
 
-# # Initialize environment and load API key
-# # ========== Gemini ==========
+# Initialize environment and load API key
+# ========== Gemini ==========
 # api_key = os.getenv("GEMINI_API_KEY")  # Use OPENAI_API_KEY for GPT-4
 # generator = ContentGenerator(api_key)
 # custom_params_gemini = {
@@ -68,6 +68,10 @@ load_dotenv()
 # print("GPT-4 Model Response:", extracted_response_gpt)
 # print("Duration:", duration_gpt, "seconds")
 
+
+
+
+
 # categories_data = ""
 # with open('topics.json', 'r', encoding='utf-8') as file:
 #     categories_data = json.load(file)
@@ -83,6 +87,10 @@ load_dotenv()
 # prompt, sentiment, categories_json = processor.generate_prompt_with_sentiment()
 
 # processor.invoke_models_and_save(prompt, sentiment, categories_json)
+
+
+
+
 
 # Assuming DBInference and BedrockRuntimeClient are already defined elsewhere
 db_instance = DBInference()  # Your database instance for saving items
