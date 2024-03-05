@@ -61,7 +61,7 @@ class ContentGenerator:
         if response.status_code != 200:
             print(f"Error calling {model_id} API. HTTP Status: {response.status_code}, Response Body: {response.text}")
             return {"error": "API call failed", "details": response.text, "status_code": response.status_code}, duration
-
+        
         return body, response.json(), duration
 
     def count_tokens(self, text):
@@ -114,7 +114,7 @@ class ContentGenerator:
         full_response['tokenCount']['input'] = input_token_count
         full_response['tokenCount']['output'] = output_token_count
 
-        return body, extracted_response, full_response, duration
+        return extracted_response, body, full_response, duration
 
 # # Example usage
 # from dotenv import load_dotenv
