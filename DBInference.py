@@ -62,13 +62,37 @@ class DBInference:
                     filter_expression = filter_expression & Attr(key).eq(value)
                 else:
                     filter_expression = Attr(key).eq(value)
+            
+            items = []
+            last_evaluated_key = None
 
-            if filter_expression:
-                response = self.table.scan(FilterExpression=filter_expression)
-            else:
-                response = self.table.scan()
+            # Continue scanning until all pages have been retrieved
+            while True:
+                if filter_expression:
+                    if last_evaluated_key:
+                        response = self.table.scan(
+                            FilterExpression=filter_expression,
+                            ExclusiveStartKey=last_evaluated_key
+                        )
+                    else:
+                        response = self.table.scan(
+                            FilterExpression=filter_expression
+                        )
+                else:
+                    if last_evaluated_key:
+                        response = self.table.scan(
+                            ExclusiveStartKey=last_evaluated_key
+                        )
+                    else:
+                        response = self.table.scan()
+                
+                items.extend(response['Items'])
 
-            return response['Items']
+                last_evaluated_key = response.get('LastEvaluatedKey')
+                if not last_evaluated_key:
+                    break
+
+            return items
         except Exception as e:
             print(f"Error retrieving items: {e}")
             return []
