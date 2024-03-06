@@ -70,6 +70,9 @@ Assistant:
     def invoke_models_and_save(self, prompt, sentiment, categories_json):
         print("Invoking models and preparing to save concurrently...")
         
+        success_count = 0
+        error_count = 0
+
         # Define a list to collect futures
         futures = []
 
@@ -90,7 +93,10 @@ Assistant:
                 # For example, future.result() will re-raise any exception caught during execution
                 try:
                     result = future.result()
+                    success_count += 1
                     # Process result (if needed)
                 except Exception as e:
                     # Handle exception
+                    error_count += 1
                     print(f"Task raised an exception: {e}")
+        return success_count, error_count

@@ -26,10 +26,7 @@ class DBInference:
                     {'AttributeName': 'model', 'AttributeType': 'S'},
                     {'AttributeName': 'timestamp', 'AttributeType': 'S'},
                 ],
-                ProvisionedThroughput={
-                    'ReadCapacityUnits': 10,
-                    'WriteCapacityUnits': 10
-                }
+                BillingMode='PAY_PER_REQUEST'  # On-Demand mode
             )
             self.table.meta.client.get_waiter('table_exists').wait(TableName=self.table_name)
             print(f"Table {self.table_name} created successfully.")
